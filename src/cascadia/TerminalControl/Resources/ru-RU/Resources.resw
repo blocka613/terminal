@@ -217,14 +217,6 @@
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Включен режим только для чтения.</value>
   </data>
-  <data name="SearchBox_MatchesAvailable" xml:space="preserve">
-    <value>Найденные результаты</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are matches for that text in the terminal.</comment>
-  </data>
-  <data name="SearchBox_NoMatches" xml:space="preserve">
-    <value>Результаты не найдены</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
-  </data>
   <data name="PasteCommandButton.Label" xml:space="preserve">
     <value>Вставить</value>
     <comment>The label of a button for pasting the contents of the clipboard.</comment>

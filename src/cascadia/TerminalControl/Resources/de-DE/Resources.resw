@@ -217,14 +217,6 @@
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Der schreibgeschützte Modus ist aktiviert.</value>
   </data>
-  <data name="SearchBox_MatchesAvailable" xml:space="preserve">
-    <value>Ergebnisse gefunden</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are matches for that text in the terminal.</comment>
-  </data>
-  <data name="SearchBox_NoMatches" xml:space="preserve">
-    <value>Keine Ergebnisse gefunden</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
-  </data>
   <data name="PasteCommandButton.Label" xml:space="preserve">
     <value>Einfügen</value>
     <comment>The label of a button for pasting the contents of the clipboard.</comment>

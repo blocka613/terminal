@@ -217,14 +217,6 @@
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>El modo de solo lectura está habilitado.</value>
   </data>
-  <data name="SearchBox_MatchesAvailable" xml:space="preserve">
-    <value>Resultados encontrados</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are matches for that text in the terminal.</comment>
-  </data>
-  <data name="SearchBox_NoMatches" xml:space="preserve">
-    <value>No se encontraron resultados</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
-  </data>
   <data name="PasteCommandButton.Label" xml:space="preserve">
     <value>Pegar</value>
     <comment>The label of a button for pasting the contents of the clipboard.</comment>

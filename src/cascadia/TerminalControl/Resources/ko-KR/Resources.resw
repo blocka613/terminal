@@ -217,14 +217,6 @@
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>읽기 전용 모드가 사용 설정됩니다.</value>
   </data>
-  <data name="SearchBox_MatchesAvailable" xml:space="preserve">
-    <value>결과 발견됨</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are matches for that text in the terminal.</comment>
-  </data>
-  <data name="SearchBox_NoMatches" xml:space="preserve">
-    <value>검색 결과 없음</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
-  </data>
   <data name="PasteCommandButton.Label" xml:space="preserve">
     <value>붙여넣기</value>
     <comment>The label of a button for pasting the contents of the clipboard.</comment>
