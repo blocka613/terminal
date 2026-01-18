@@ -165,6 +165,24 @@
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="SaveLayoutMenuItem" xml:space="preserve">
+    <value>Save Layout...</value>
+  </data>
+  <data name="LoadLayoutMenuItem" xml:space="preserve">
+    <value>Load Layout</value>
+  </data>
+  <data name="SaveLayoutDialogTitle" xml:space="preserve">
+    <value>Save Layout</value>
+  </data>
+  <data name="SaveLayoutDialogSaveButton" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="SaveLayoutDialogCancelButton" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SaveLayoutDialogPlaceholder" xml:space="preserve">
+    <value>Enter layout name</value>
+  </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Multiple panes</value>
   </data>

@@ -1009,6 +1009,23 @@ namespace winrt::TerminalApp::implementation
                 _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
             }
 
+            // Create the save layout button.
+            auto saveLayoutItem = WUX::Controls::MenuFlyoutItem{};
+            saveLayoutItem.Text(RS_(L"SaveLayoutMenuItem"));
+
+            WUX::Controls::FontIcon saveLayoutIcon{};
+            saveLayoutIcon.Glyph(L"\xE74E"); // Save icon
+            saveLayoutIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            saveLayoutItem.Icon(saveLayoutIcon);
+
+            saveLayoutItem.Click([weakThis = get_weak()](auto&&, auto&&) {
+                if (auto page = weakThis.get())
+                {
+                    page->_SaveLayoutWithDialog();
+                }
+            });
+            newTabFlyout.Items().Append(saveLayoutItem);
+
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
             aboutFlyout.Text(RS_(L"AboutMenuItem"));
@@ -2291,6 +2308,190 @@ namespace winrt::TerminalApp::implementation
         layout.InitialPosition(launchPosRequest.Position());
 
         ApplicationState::SharedInstance().AppendPersistedWindowLayout(layout);
+    }
+
+    void TerminalPage::_SaveLayoutWithName(const winrt::hstring& name)
+    {
+        // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
+        const auto tabCount = _tabs.Size();
+        if (_startupState != StartupState::Initialized || tabCount == 0)
+        {
+            return;
+        }
+
+        std::vector<ActionAndArgs> actions;
+
+        for (auto tab : _tabs)
+        {
+            auto t = winrt::get_self<implementation::Tab>(tab);
+            // Use None kind to get CWD without session buffer persistence
+            auto tabActions = t->BuildStartupActions(BuildStartupKind::None);
+            actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
+        }
+
+        if (actions.empty())
+        {
+            return;
+        }
+
+        // if the focused tab was not the last tab, restore that
+        auto idx = _GetFocusedTabIndex();
+        if (idx && idx != tabCount - 1)
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::SwitchToTab);
+            SwitchToTabArgs switchToTabArgs{ idx.value() };
+            action.Args(switchToTabArgs);
+            actions.emplace_back(std::move(action));
+        }
+
+        WindowLayout layout;
+        layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+
+        auto mode = LaunchMode::DefaultMode;
+        WI_SetFlagIf(mode, LaunchMode::FullscreenMode, _isFullscreen);
+        WI_SetFlagIf(mode, LaunchMode::FocusMode, _isInFocusMode);
+        WI_SetFlagIf(mode, LaunchMode::MaximizedMode, _isMaximized);
+        layout.LaunchMode({ mode });
+
+        const auto contentWidth = static_cast<float>(_tabContent.ActualWidth());
+        const auto contentHeight = static_cast<float>(_tabContent.ActualHeight());
+        const winrt::Windows::Foundation::Size windowSize{ contentWidth, contentHeight };
+        layout.InitialSize(windowSize);
+
+        // Create named layout and save
+        NamedWindowLayout namedLayout;
+        namedLayout.Name(name);
+        namedLayout.Layout(layout);
+
+        ApplicationState::SharedInstance().AddSavedLayout(namedLayout);
+
+        // Show a brief toast notification that the layout was saved
+        // (TeachingTip would be ideal but we skip this for now)
+    }
+
+    safe_void_coroutine TerminalPage::_SaveLayoutWithDialog()
+    {
+        auto presenter{ _dialogPresenter.get() };
+        if (!presenter)
+        {
+            co_return;
+        }
+
+        // Simple dialog to get layout name from user
+        ContentDialog dialog;
+        dialog.Title(winrt::box_value(RS_(L"SaveLayoutDialogTitle")));
+        dialog.PrimaryButtonText(RS_(L"SaveLayoutDialogSaveButton"));
+        dialog.CloseButtonText(RS_(L"SaveLayoutDialogCancelButton"));
+        dialog.DefaultButton(ContentDialogButton::Primary);
+
+        TextBox nameInput;
+        nameInput.PlaceholderText(RS_(L"SaveLayoutDialogPlaceholder"));
+        nameInput.Width(300);
+        nameInput.AcceptsReturn(false);
+        dialog.Content(nameInput);
+
+        // Focus the text box when the dialog opens
+        dialog.Opened([nameInput](auto&&, auto&&) {
+            nameInput.Focus(WUX::FocusState::Programmatic);
+        });
+
+        const auto result = co_await presenter.ShowDialog(dialog);
+
+        if (result == ContentDialogResult::Primary)
+        {
+            auto layoutName = nameInput.Text();
+            if (!layoutName.empty())
+            {
+                _SaveLayoutWithName(layoutName);
+            }
+        }
+    }
+
+    void TerminalPage::_LoadLayoutByName(const winrt::hstring& name)
+    {
+        const auto namedLayout = ApplicationState::SharedInstance().GetSavedLayout(name);
+        if (!namedLayout)
+        {
+            return;
+        }
+
+        const auto layout = namedLayout.Layout();
+        if (!layout)
+        {
+            return;
+        }
+
+        const auto actions = layout.TabLayout();
+        if (!actions || actions.Size() == 0)
+        {
+            return;
+        }
+
+        // Build command line to launch new window with the layout
+        std::wstring cmdline = L"-w -1"; // New window
+
+        for (const auto& actionAndArgs : actions)
+        {
+            const auto action = actionAndArgs.Action();
+            const auto args = actionAndArgs.Args();
+
+            if (action == ShortcutAction::NewTab)
+            {
+                if (const auto& tabArgs = args.try_as<NewTabArgs>())
+                {
+                    if (const auto& termArgs = tabArgs.ContentArgs().try_as<NewTerminalArgs>())
+                    {
+                        cmdline += L" new-tab";
+                        auto commandlineStr = termArgs.ToCommandline();
+                        if (!commandlineStr.empty())
+                        {
+                            cmdline += L" ";
+                            cmdline += commandlineStr;
+                        }
+                    }
+                }
+            }
+            else if (action == ShortcutAction::SplitPane)
+            {
+                if (const auto& splitArgs = args.try_as<SplitPaneArgs>())
+                {
+                    if (const auto& termArgs = splitArgs.ContentArgs().try_as<NewTerminalArgs>())
+                    {
+                        cmdline += L" ; split-pane";
+
+                        // Add split direction
+                        const auto direction = splitArgs.SplitDirection();
+                        if (direction == SplitDirection::Up || direction == SplitDirection::Down)
+                        {
+                            cmdline += L" --horizontal";
+                        }
+                        else if (direction == SplitDirection::Left || direction == SplitDirection::Right)
+                        {
+                            cmdline += L" --vertical";
+                        }
+
+                        auto commandlineStr = termArgs.ToCommandline();
+                        if (!commandlineStr.empty())
+                        {
+                            cmdline += L" ";
+                            cmdline += commandlineStr;
+                        }
+                    }
+                }
+            }
+            // Other actions like SwitchToTab, FocusPane, etc. are skipped for simplicity
+        }
+
+        // Launch new terminal window with the command line
+        SHELLEXECUTEINFOW seInfo{ 0 };
+        seInfo.cbSize = sizeof(seInfo);
+        seInfo.fMask = SEE_MASK_NOASYNC;
+        seInfo.lpVerb = L"open";
+        seInfo.lpFile = L"wt.exe";
+        seInfo.lpParameters = cmdline.c_str();
+        seInfo.nShow = SW_SHOWNORMAL;
+        LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
     }
 
     // Method Description:
@@ -4344,6 +4545,17 @@ namespace winrt::TerminalApp::implementation
         {
             _tabView.SelectedItem(_settingsTab.TabViewItem());
         }
+    }
+
+    // Method Description:
+    // - Shows the save layout dialog to let the user save the current layout.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::SaveLayout()
+    {
+        _SaveLayoutWithDialog();
     }
 
     // Method Description:

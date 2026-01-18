@@ -50,6 +50,8 @@
 #include "SelectCommandArgs.g.cpp"
 #include "SelectOutputArgs.g.cpp"
 #include "ColorSelectionArgs.g.cpp"
+#include "SaveLayoutArgs.g.cpp"
+#include "LoadLayoutArgs.g.cpp"
 
 #include <WtExeUtils.h>
 #include <ScopedResourceLoader.h>
@@ -1053,5 +1055,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_switchable_(L"SelectCommandPreviousCommandKey");
         }
         return {};
+    }
+
+    winrt::hstring SaveLayoutArgs::GenerateName(const winrt::WARC::ResourceContext& /*context*/) const
+    {
+        // "Save layout as \"{_Name}\""
+        // "Save layout..."
+        if (!Name().empty())
+        {
+            return winrt::hstring{ fmt::format(FMT_COMPILE(L"Save layout as \"{}\""), Name()) };
+        }
+        return winrt::hstring{ L"Save layout..." };
+    }
+
+    winrt::hstring LoadLayoutArgs::GenerateName(const winrt::WARC::ResourceContext& /*context*/) const
+    {
+        // "Load layout \"{_Name}\""
+        if (!Name().empty())
+        {
+            return winrt::hstring{ fmt::format(FMT_COMPILE(L"Load layout \"{}\""), Name()) };
+        }
+        return winrt::hstring{ L"Load layout" };
     }
 }

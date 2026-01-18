@@ -649,6 +649,9 @@
         { "command": { "action": "clearBuffer", "clear": "all" }, "id": "Terminal.ClearBuffer" },
         { "command": "exportBuffer", "id": "Terminal.ExportBuffer" },
 
+        // Layout management
+        { "command": "saveLayout", "name": "Save layout...", "id": "Terminal.SaveLayout" },
+
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "id": "Terminal.IncreaseFontSize" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "id": "Terminal.DecreaseFontSize" },

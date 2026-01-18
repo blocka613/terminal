@@ -14,6 +14,7 @@ Abstract:
 
 #include "ApplicationState.g.h"
 #include "WindowLayout.g.h"
+#include "NamedWindowLayout.g.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <JsonUtils.h>
@@ -42,7 +43,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
     X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")                                                  \
     X(FileSource::Local, std::unordered_set<hstring>, DismissedBadges, "dismissedBadges")                                                                                 \
-    X(FileSource::Shared, bool, SSHFolderGenerated, "sshFolderGenerated", false)
+    X(FileSource::Shared, bool, SSHFolderGenerated, "sshFolderGenerated", false)                                                                                          \
+    X(FileSource::Shared, Windows::Foundation::Collections::IVector<Model::NamedWindowLayout>, SavedLayouts, "savedLayouts")
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
@@ -55,6 +57,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchMode>, LaunchMode, nullptr);
 
         friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
+    };
+
+    struct NamedWindowLayout : NamedWindowLayoutT<NamedWindowLayout>
+    {
+        static winrt::hstring ToJson(const Model::NamedWindowLayout& layout);
+        static Model::NamedWindowLayout FromJson(const winrt::hstring& json);
+
+        WINRT_PROPERTY(winrt::hstring, Name, L"");
+        WINRT_PROPERTY(Model::WindowLayout, Layout, nullptr);
+
+        friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::NamedWindowLayout>;
     };
 
     struct ApplicationState : public ApplicationStateT<ApplicationState>
@@ -74,6 +87,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AppendPersistedWindowLayout(Model::WindowLayout layout);
         bool DismissBadge(const hstring& badgeId);
         bool BadgeDismissed(const hstring& badgeId) const;
+
+        // Named layout management
+        void AddSavedLayout(Model::NamedWindowLayout layout);
+        void RemoveSavedLayout(const hstring& name);
+        Model::NamedWindowLayout GetSavedLayout(const hstring& name) const;
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
@@ -109,5 +127,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(WindowLayout)
+    BASIC_FACTORY(NamedWindowLayout)
     BASIC_FACTORY(ApplicationState);
 }

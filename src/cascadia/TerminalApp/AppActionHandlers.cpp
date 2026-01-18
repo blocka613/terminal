@@ -1623,4 +1623,50 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
+    void TerminalPage::_HandleSaveLayout(const IInspectable& /*sender*/,
+                                         const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SaveLayoutArgs>())
+            {
+                auto layoutName = realArgs.Name();
+                if (layoutName.empty())
+                {
+                    // Show dialog to get layout name
+                    _SaveLayoutWithDialog();
+                }
+                else
+                {
+                    _SaveLayoutWithName(layoutName);
+                }
+                args.Handled(true);
+                return;
+            }
+        }
+        // No args, show dialog
+        _SaveLayoutWithDialog();
+        if (args)
+        {
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleLoadLayout(const IInspectable& /*sender*/,
+                                         const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<LoadLayoutArgs>())
+            {
+                auto layoutName = realArgs.Name();
+                if (!layoutName.empty())
+                {
+                    _LoadLayoutByName(layoutName);
+                }
+                args.Handled(true);
+            }
+        }
+    }
 }

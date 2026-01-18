@@ -6,6 +6,7 @@
 #include "CascadiaSettings.h"
 #include "ApplicationState.g.cpp"
 #include "WindowLayout.g.cpp"
+#include "NamedWindowLayout.g.cpp"
 #include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include "FileUtils.h"
@@ -20,6 +21,10 @@ static constexpr std::string_view TabLayoutKey{ "tabLayout" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view InitialSizeKey{ "initialSize" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
+
+// NamedWindowLayout JSON keys
+static constexpr std::string_view NamedLayoutNameKey{ "name" };
+static constexpr std::string_view NamedLayoutLayoutKey{ "layout" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
@@ -62,6 +67,40 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return "WindowLayout";
         }
     };
+
+    template<>
+    struct ConversionTrait<NamedWindowLayout>
+    {
+        NamedWindowLayout FromJson(const Json::Value& json)
+        {
+            auto namedLayout = winrt::make_self<implementation::NamedWindowLayout>();
+
+            GetValueForKey(json, NamedLayoutNameKey, namedLayout->_Name);
+            GetValueForKey(json, NamedLayoutLayoutKey, namedLayout->_Layout);
+
+            return *namedLayout;
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            return json.isObject();
+        }
+
+        Json::Value ToJson(const NamedWindowLayout& val)
+        {
+            Json::Value json{ Json::objectValue };
+
+            SetValueForKey(json, NamedLayoutNameKey, val.Name());
+            SetValueForKey(json, NamedLayoutLayoutKey, val.Layout());
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return "NamedWindowLayout";
+        }
+    };
 }
 
 using namespace ::Microsoft::Terminal::Settings::Model;
@@ -90,6 +129,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
         JsonUtils::ConversionTrait<Model::WindowLayout> trait;
+        return trait.FromJson(root);
+    }
+
+    winrt::hstring NamedWindowLayout::ToJson(const Model::NamedWindowLayout& layout)
+    {
+        JsonUtils::ConversionTrait<Model::NamedWindowLayout> trait;
+        auto json = trait.ToJson(layout);
+
+        Json::StreamWriterBuilder wbuilder;
+        const auto content = Json::writeString(wbuilder, json);
+        return hstring{ til::u8u16(content) };
+    }
+
+    Model::NamedWindowLayout NamedWindowLayout::FromJson(const hstring& str)
+    {
+        auto data = til::u16u8(str);
+        std::string errs;
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
+
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+        JsonUtils::ConversionTrait<Model::NamedWindowLayout> trait;
         return trait.FromJson(root);
     }
 
@@ -339,6 +403,78 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return state->DismissedBadges->contains(badgeId);
         }
         return false;
+    }
+
+    void ApplicationState::AddSavedLayout(Model::NamedWindowLayout layout)
+    {
+        {
+            const auto state = _state.lock();
+            if (!state->SavedLayouts || !*state->SavedLayouts)
+            {
+                state->SavedLayouts = winrt::single_threaded_vector<Model::NamedWindowLayout>();
+            }
+
+            // Check if a layout with this name already exists and replace it
+            const auto name = layout.Name();
+            auto& layouts = *state->SavedLayouts;
+            for (uint32_t i = 0; i < layouts.Size(); ++i)
+            {
+                if (layouts.GetAt(i).Name() == name)
+                {
+                    layouts.SetAt(i, layout);
+                    _throttler();
+                    return;
+                }
+            }
+
+            // Not found, append new layout
+            layouts.Append(std::move(layout));
+        }
+
+        _throttler();
+    }
+
+    void ApplicationState::RemoveSavedLayout(const hstring& name)
+    {
+        {
+            const auto state = _state.lock();
+            if (!state->SavedLayouts || !*state->SavedLayouts)
+            {
+                return;
+            }
+
+            auto& layouts = *state->SavedLayouts;
+            for (uint32_t i = 0; i < layouts.Size(); ++i)
+            {
+                if (layouts.GetAt(i).Name() == name)
+                {
+                    layouts.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+        _throttler();
+    }
+
+    Model::NamedWindowLayout ApplicationState::GetSavedLayout(const hstring& name) const
+    {
+        const auto state = _state.lock_shared();
+        if (!state->SavedLayouts || !*state->SavedLayouts)
+        {
+            return nullptr;
+        }
+
+        const auto& layouts = *state->SavedLayouts;
+        for (uint32_t i = 0; i < layouts.Size(); ++i)
+        {
+            const auto& layout = layouts.GetAt(i);
+            if (layout.Name() == name)
+            {
+                return layout;
+            }
+        }
+        return nullptr;
     }
 
     // Generate all getter/setters

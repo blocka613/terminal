@@ -167,6 +167,7 @@ namespace winrt::TerminalApp::implementation
         bool IsRunningElevated() const noexcept;
 
         void OpenSettingsUI();
+        void SaveLayout();
         void WindowActivated(const bool activated);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
@@ -348,6 +349,11 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateTab(const Tab& tab);
 
         safe_void_coroutine _ExportTab(const Tab& tab, winrt::hstring filepath);
+
+        // Layout save/load helpers
+        void _SaveLayoutWithName(const winrt::hstring& name);
+        safe_void_coroutine _SaveLayoutWithDialog();
+        void _LoadLayoutByName(const winrt::hstring& name);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::Tab tab);
         void _CloseTabAtIndex(uint32_t index);

@@ -26,6 +26,17 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<LaunchMode> LaunchMode;
     };
 
+    runtimeclass NamedWindowLayout
+    {
+        NamedWindowLayout();
+
+        static String ToJson(NamedWindowLayout layout);
+        static NamedWindowLayout FromJson(String json);
+
+        String Name;
+        WindowLayout Layout;
+    };
+
     [default_interface] runtimeclass ApplicationState {
         static ApplicationState SharedInstance();
 
@@ -36,10 +47,16 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean DismissBadge(String badgeId);
         Boolean BadgeDismissed(String badgeId);
 
+        // Named layout management
+        void AddSavedLayout(NamedWindowLayout layout);
+        void RemoveSavedLayout(String name);
+        NamedWindowLayout GetSavedLayout(String name);
+
         String SettingsHash;
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;
         Windows.Foundation.Collections.IVector<String> RecentCommands;
         Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages;
         Windows.Foundation.Collections.IVector<String> AllowedCommandlines;
+        Windows.Foundation.Collections.IVector<NamedWindowLayout> SavedLayouts;
     }
 }

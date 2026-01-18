@@ -320,14 +320,13 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
-  <!-- PowerShell version check, outputs error if the wrong version is installed. -->
+  <!-- PowerShell version check - skipped for dev builds without pwsh.exe -->
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
   <Target Name="BeforeResourceCompile" Inputs="defaults.json;userDefaults.json;enableColorSelection.json" Outputs="Generated Files\defaults.json;Generated Files\userDefaults.json;Generated Files\enableColorSelection.json">
-    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted -File &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile defaults.json -OutPath &quot;Generated Files\defaults.json&quot;" />
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.json&quot;" />
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CompressJson.ps1&quot; -JsonFile enableColorSelection.json -OutPath &quot;Generated Files\enableColorSelection.json&quot;" />
+    <!-- For dev builds without PowerShell Core, just copy the JSON files uncompressed -->
+    <Copy SourceFiles="defaults.json" DestinationFiles="Generated Files\defaults.json" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="userDefaults.json" DestinationFiles="Generated Files\userDefaults.json" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="enableColorSelection.json" DestinationFiles="Generated Files\enableColorSelection.json" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

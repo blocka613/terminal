@@ -52,6 +52,8 @@
 #include "SelectCommandArgs.g.h"
 #include "SelectOutputArgs.g.h"
 #include "ColorSelectionArgs.g.h"
+#include "SaveLayoutArgs.g.h"
+#include "LoadLayoutArgs.g.h"
 
 #include "JsonUtils.h"
 #include "HashUtils.h"
@@ -288,6 +290,14 @@ protected:                                                                  \
     X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, ArgTypeHint::None, nullptr) \
     X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, ArgTypeHint::None, nullptr) \
     X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, ArgTypeHint::None, winrt::Microsoft::Terminal::Core::MatchMode::None)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SAVE_LAYOUT_ARGS(X) \
+    X(winrt::hstring, Name, "name", false, ArgTypeHint::None, L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define LOAD_LAYOUT_ARGS(X) \
+    X(winrt::hstring, Name, "name", args->Name().empty(), ArgTypeHint::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define NEW_TERMINAL_ARGS(X)                                                                                                          \
@@ -1037,6 +1047,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ColorSelectionArgs, COLOR_SELECTION_ARGS);
 
+    ACTION_ARGS_STRUCT(SaveLayoutArgs, SAVE_LAYOUT_ARGS);
+    ACTION_ARGS_STRUCT(LoadLayoutArgs, LOAD_LAYOUT_ARGS);
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -1078,6 +1091,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SuggestionsArgs);
     BASIC_FACTORY(SelectCommandArgs);
     BASIC_FACTORY(SelectOutputArgs);
+    BASIC_FACTORY(SaveLayoutArgs);
+    BASIC_FACTORY(LoadLayoutArgs);
 }
 
 class ScopedResourceLoader;

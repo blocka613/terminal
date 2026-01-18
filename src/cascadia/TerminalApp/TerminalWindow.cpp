@@ -217,6 +217,11 @@ namespace winrt::TerminalApp::implementation
                                                            SystemMenuItemHandler(this, &TerminalWindow::_OpenSettingsUI));
         SystemMenuChangeRequested.raise(*this, *args);
 
+        auto saveLayoutArgs = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SaveLayoutMenuItem"),
+                                                                      SystemMenuChangeAction::Add,
+                                                                      SystemMenuItemHandler(this, &TerminalWindow::_SaveLayout));
+        SystemMenuChangeRequested.raise(*this, *saveLayoutArgs);
+
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "WindowCreated",
@@ -824,6 +829,12 @@ namespace winrt::TerminalApp::implementation
     {
         _root->OpenSettingsUI();
     }
+
+    void TerminalWindow::_SaveLayout()
+    {
+        _root->SaveLayout();
+    }
+
     UIElement TerminalWindow::GetRoot() noexcept
     {
         return _root.as<winrt::Windows::UI::Xaml::Controls::Control>();
